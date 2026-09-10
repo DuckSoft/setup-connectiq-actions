@@ -41,19 +41,38 @@ steps:
     run: monkeyc -f monkey.jungle -d fenix7 -o bin/app.prg -y developer_key
 ```
 
-### Copilot coding agent (`copilot-setup-steps.yml`)
+### Copilot coding agent (`.github/workflows/copilot-setup-steps.yml`)
 
 ```yaml
-steps:
-  - uses: actions/checkout@v4
+name: Copilot Setup Steps
 
-  - uses: actions/setup-java@v4
-    with:
-      distribution: temurin
-      java-version: "17"
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+  pull_request:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
 
-  - name: Setup ConnectIQ SDK
-    uses: DuckSoft/setup-connectiq-actions@v1
+jobs:
+  # The job MUST be called `copilot-setup-steps` to be picked up by Copilot.
+  copilot-setup-steps:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Setup ConnectIQ SDK
+        uses: DuckSoft/setup-connectiq-actions@v1
+        with:
+          sdk-version: "9.2.0" # or "latest"
 ```
 
 ## Inputs
