@@ -1,8 +1,5 @@
 name: Setup ConnectIQ SDK
-description: >-
-  Downloads and installs the Garmin ConnectIQ SDK and device definitions so
-  ConnectIQ apps can be compiled and tested, e.g. from a
-  copilot-setup-steps.yml or any other GitHub Actions workflow.
+description: Installs the Garmin ConnectIQ SDK and device definitions for compiling and testing apps in GitHub Actions.
 author: DuckSoft
 branding:
   icon: watch
