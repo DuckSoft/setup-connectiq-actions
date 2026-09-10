@@ -1,31 +1,99 @@
-# ConnectIQ tools
+# Setup ConnectIQ SDK
 
-A Docker image with the ConnectIQ tools. It does not support the simulator due to missing library files, but all other tools work.
+A composite GitHub Action that downloads and installs the
+[Garmin ConnectIQ SDK](https://developer.garmin.com/connect-iq/overview/) and
+the bundled device definitions, so ConnectIQ apps can be compiled and tested
+in CI — including inside
+[GitHub Copilot coding agent environments](https://docs.github.com/en/copilot/customizing-copilot/customizing-the-development-environment-for-copilot-coding-agent)
+via `copilot-setup-steps.yml`.
+
+The action:
+
+- Downloads the requested SDK version (or `latest`) from Garmin.
+- Adds the SDK `bin` directory (`monkeyc`, `monkeydo`, …) to `PATH`.
+- Exports `CONNECT_IQ_HOME` for later steps.
+- Installs the bundled device definitions into `~/.Garmin/ConnectIQ/Devices`
+  (used by the compiler and `monkeydo`/`monkeytest`).
+
+> [!NOTE]
+> The ConnectIQ compiler (`monkeybrains.jar`) requires a Java runtime.
+> Install one with [`actions/setup-java`](https://github.com/actions/setup-java)
+> (Java 17+) before or after this action. The action warns when `java` is not
+> found on `PATH`.
 
 ## Usage
 
-This docker image contain all tools for interacting with the Garmin ConnectIQ toolset
+```yaml
+steps:
+  - uses: actions/checkout@v4
 
-`docker run -it ghcr.io/blackshadev/garmin-connectiq-tools:9.1.0`
+  - uses: actions/setup-java@v4
+    with:
+      distribution: temurin
+      java-version: "17"
 
-### Releasing
+  - name: Setup ConnectIQ SDK
+    uses: DuckSoft/setup-connectiq-actions@v1
+    with:
+      sdk-version: "9.2.0" # or "latest"
 
-`java -jar /connectiq/bin/monkeybrains.jar -e -r -w -o $OUTPUT -f $PROJECT -y $DEVELOPER_KEY`
+  - name: Build
+    run: monkeyc -f monkey.jungle -d fenix7 -o bin/app.prg -y developer_key
+```
 
-### Compiling / Checking
+### Copilot coding agent (`copilot-setup-steps.yml`)
 
-`java -jar /connectiq/bin/monkeybrains.jar -f $PROJECT -d $DEVICE -o $OUTPUT -y $DEVELOPER_KEY -l $TYPE_CHECK_LEVEL`
+```yaml
+steps:
+  - uses: actions/checkout@v4
 
-## Updating
+  - uses: actions/setup-java@v4
+    with:
+      distribution: temurin
+      java-version: "17"
 
-### Devices
+  - name: Setup ConnectIQ SDK
+    uses: DuckSoft/setup-connectiq-actions@v1
+```
 
-Ensure you have installed all devices locally and run `./update_devices.sh` , it will archive all locally installed devices into the repository. There doesn't seems to be a way to download the devices without running garmin's sdk-manager, which is a GUI app. If you have the solution to this problem, hit me up
+## Inputs
 
-### SDK version
+| Input             | Description                                                                 | Default                     |
+| ----------------- | --------------------------------------------------------------------------- | --------------------------- |
+| `sdk-version`     | ConnectIQ SDK version to install (e.g. `9.2.0`), or `latest`.               | `9.2.0`                     |
+| `install-path`    | Directory the SDK is installed into.                                        | `${{ runner.temp }}/connectiq` |
+| `install-devices` | Extract the bundled device definitions to `~/.Garmin/ConnectIQ/Devices`.    | `true`                      |
 
-Change the version in the Dockerfile
+## Outputs
+
+| Output        | Description                                   |
+| ------------- | --------------------------------------------- |
+| `sdk-path`    | Directory the SDK was installed into.         |
+| `sdk-version` | The SDK version that was installed.           |
+
+## Example: compile and run unit tests
+
+```yaml
+- name: Compile
+  run: |
+    java -jar "$CONNECT_IQ_HOME/bin/monkeybrains.jar" \
+      -f monkey.jungle -d fenix7 -o bin/app.prg -y "$DEVELOPER_KEY" -l 3
+
+- name: Run tests in the simulator
+  run: connectiq && monkeydo bin/app.prg fenix7 -t
+```
+
+The simulator needs extra graphical libraries; this action targets compiling
+and headless tooling.
+
+## Updating the bundled device definitions
+
+Garmin does not provide a headless way to download device definitions (the
+SDK Manager is a GUI app). To refresh them: install all devices locally with
+the SDK Manager, then run `./update-devices.sh` and commit the resulting
+`devices.tar.gz`.
 
 ## Based on
 
-The files here are largely based on [prior work done by matco](https://github.com/matco/connectiq-tester). The difference being I focussed on optimising the docker image some more and I wanted to expose more tools besides only running unit tests in the most strict type checking level
+Forked from [blackshadev/garmin-connectiq-tools](https://github.com/blackshadev/garmin-connectiq-tools),
+which in turn is largely based on [prior work by matco](https://github.com/matco/connectiq-tester).

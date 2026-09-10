@@ -1,0 +1,58 @@
+name: Setup ConnectIQ SDK
+description: >-
+  Downloads and installs the Garmin ConnectIQ SDK and device definitions so
+  ConnectIQ apps can be compiled and tested, e.g. from a
+  copilot-setup-steps.yml or any other GitHub Actions workflow.
+author: DuckSoft
+branding:
+  icon: watch
+  color: blue
+
+inputs:
+  sdk-version:
+    description: ConnectIQ SDK version to install (for example "9.2.0"), or "latest".
+    required: false
+    default: "9.2.0"
+  install-path:
+    description: Directory the SDK is installed into.
+    required: false
+    default: ${{ runner.temp }}/connectiq
+  install-devices:
+    description: >-
+      Install the bundled ConnectIQ device definitions into
+      ~/.Garmin/ConnectIQ/Devices.
+    required: false
+    default: "true"
+
+outputs:
+  sdk-path:
+    description: Directory the ConnectIQ SDK was installed into.
+    value: ${{ steps.setup.outputs.sdk-path }}
+  sdk-version:
+    description: The ConnectIQ SDK version that was installed.
+    value: ${{ steps.setup.outputs.sdk-version }}
+
+runs:
+  using: composite
+  steps:
+    - name: Download ConnectIQ SDK
+      id: setup
+      shell: bash
+      env:
+        CONNECT_IQ_VERSION: ${{ inputs.sdk-version }}
+        CONNECT_IQ_HOME: ${{ inputs.install-path }}
+      run: ${{ github.action_path }}/downloader.sh
+
+    - name: Install ConnectIQ device definitions
+      if: inputs.install-devices == 'true'
+      shell: bash
+      run: ${{ github.action_path }}/install-devices.sh
+
+    - name: Verify Java runtime
+      shell: bash
+      run: |
+        if ! command -v java >/dev/null 2>&1; then
+          echo "::warning::Java was not found on PATH. The ConnectIQ compiler (monkeybrains.jar) requires a JRE; add actions/setup-java before this action."
+        else
+          java -version
+        fi
