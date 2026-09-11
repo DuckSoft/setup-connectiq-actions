@@ -43,5 +43,5 @@ exec timeout --signal=TERM --kill-after=10s 180s \
         fi
         "$CONNECT_IQ_HOME/bin/monkeydo" "$1" "$2" -t | tee "$log_dir/tests.log"
         # Require an actual successful test summary, even if the SDK exits zero.
-        grep -Eq "PASSED \(passed=[1-9][0-9]*, failed=0 , errors=0\)" "$log_dir/tests.log"
+        grep -Eq "^PASSED \(passed=[1-9][0-9]*, failed=0, errors=0\)[[:space:]]*$" "$log_dir/tests.log"
     ' bash "$1" "$2"

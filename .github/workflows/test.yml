@@ -71,4 +71,4 @@ jobs:
           fi
           cat "$RUNNER_TEMP/fail.log"
           grep -Fq "SETUP_CONNECTIQ_SIMULATOR_SMOKE_EXECUTED" "$RUNNER_TEMP/fail.log"
-          grep -Eq 'FAILED \(passed=0, failed=1 , errors=0\)' "$RUNNER_TEMP/fail.log"
+          grep -Eq '^FAILED \(passed=0, failed=1, errors=0\)[[:space:]]*$' "$RUNNER_TEMP/fail.log"
