@@ -6,6 +6,7 @@ set -euo pipefail
 
 CONNECT_IQ_VERSION="${CONNECT_IQ_VERSION:-latest}"
 CONNECT_IQ_HOME="${CONNECT_IQ_HOME:?CONNECT_IQ_HOME must be set to the SDK install directory}"
+echo "::debug::SDK request: version=${CONNECT_IQ_VERSION} install-path=${CONNECT_IQ_HOME}"
 
 for cmd in curl jq unzip; do
     if ! command -v "${cmd}" >/dev/null 2>&1; then
@@ -13,6 +14,7 @@ for cmd in curl jq unzip; do
         exit 1
     fi
 done
+echo "::debug::Download prerequisites found: curl=$(command -v curl) jq=$(command -v jq) unzip=$(command -v unzip)"
 
 CONNECTIQ_SDK_URL="https://developer.garmin.com/downloads/connect-iq/sdks"
 CONNECTIQ_SDK_INFO_URL="${CONNECTIQ_SDK_URL}/sdks.json"
@@ -31,6 +33,7 @@ else
         (if type == "object" then .sdks else . end)[]
         | select(.version == $version) | "\(.version) \(.linux)"')"
 fi
+echo "::debug::Resolved SDK request '${CONNECT_IQ_VERSION}' to version=${version:-<none>} archive=${filename:-<none>}"
 
 if [ -z "${version}" ] || [ -z "${filename}" ] || [ "${filename}" = "null" ]; then
     echo "error: no Linux SDK download found for version '${CONNECT_IQ_VERSION}'" >&2
@@ -64,6 +67,7 @@ fi
 if [ -n "${GITHUB_ENV:-}" ]; then
     echo "CONNECT_IQ_HOME=${CONNECT_IQ_HOME}" >> "${GITHUB_ENV}"
 fi
+echo "::debug::Exported SDK bin directory to GITHUB_PATH and CONNECT_IQ_HOME to GITHUB_ENV when available"
 if [ -n "${GITHUB_OUTPUT:-}" ]; then
     {
         echo "sdk-path=${CONNECT_IQ_HOME}"
