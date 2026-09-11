@@ -21,6 +21,11 @@ inputs:
     required: false
     default: "true"
 
+  install-simulator-dependencies:
+    description: Install native simulator dependencies (Ubuntu 22.04 x86_64 only; requires root or passwordless sudo).
+    required: false
+    default: "false"
+
 outputs:
   sdk-path:
     description: Directory the ConnectIQ SDK was installed into.
@@ -44,6 +49,13 @@ runs:
       if: inputs.install-devices == 'true'
       shell: bash
       run: ${{ github.action_path }}/install-devices.sh
+
+    - name: Install simulator dependencies
+      if: inputs.install-simulator-dependencies == 'true'
+      shell: bash
+      env:
+        CONNECT_IQ_HOME: ${{ steps.setup.outputs.sdk-path }}
+      run: bash "${{ github.action_path }}/install-simulator-dependencies.sh"
 
     - name: Verify Java runtime
       shell: bash

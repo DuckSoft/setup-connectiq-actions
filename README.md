@@ -92,18 +92,55 @@ jobs:
 
 ## Example: compile and run unit tests
 
-```yaml
-- name: Compile
-  run: |
-    java -jar "$CONNECT_IQ_HOME/bin/monkeybrains.jar" \
-      -f monkey.jungle -d fenix7 -o bin/app.prg -y "$DEVELOPER_KEY" -l 3
+SDK 9.2.0's Linux simulator is an x86_64 GUI executable requiring WebKitGTK
+4.0. Use `ubuntu-22.04` for simulator jobs. Ubuntu 24.04 does not provide the
+required WebKitGTK 4.0 package. Keep compiler-only jobs on their existing runner.
+Do not symlink WebKitGTK 4.1 to 4.0 or mix Ubuntu package repositories.
 
-- name: Run tests in the simulator
-  run: connectiq && monkeydo bin/app.prg fenix7 -t
+The optional `install-simulator-dependencies` input defaults to `false`.
+When `true`, it installs the Ubuntu 22.04 runtime libraries, Xvfb, Xauth,
+D-Bus tools and fonts using root or passwordless sudo, and checks shared-library
+resolution. It does not start a simulator or leave a display server running.
+On other OS versions or architectures it fails with an actionable error.
+Self-hosted Ubuntu 22.04 runners must have the official Universe component enabled.
+This configuration is tested with SDK 9.2.0; `latest` is not a compatibility guarantee.
+
+For a consumer repository, copy `tests/run-simulator-tests.sh` from this action
+into your own repository at the same path, then use:
+
+```yaml
+jobs:
+  simulator-tests:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: DuckSoft/setup-connectiq-actions@v1
+        with:
+          sdk-version: "9.2.0"
+          install-simulator-dependencies: "true"
+      # Provision DEVELOPER_KEY with the path to your DER signing key.
+      - name: Compile tests
+        run: monkeyc -f monkey.jungle -d fenix7 -o bin/app.prg -y "$DEVELOPER_KEY" -t
+      - name: Run tests
+        run: bash tests/run-simulator-tests.sh bin/app.prg fenix7
 ```
 
-The simulator needs extra graphical libraries; this action targets compiling
-and headless tooling.
+Compile with `-t` to include unit tests. On Linux, `connectiq` runs the
+simulator in the foreground, so `connectiq && monkeydo ...` cannot execute tests
+while the simulator is running. The helper launches the simulator in the
+background, waits for its TCP listener, runs tests in the same virtual display,
+propagates failures and cleans up. It times out after 180 seconds.
+The new action input is available through `@v1` only after the fix is released
+and that tag is updated; before release, use the reviewed fix's commit SHA.
+
+For Copilot simulator work, likewise change the setup job to `ubuntu-22.04`
+and set `install-simulator-dependencies: "true"`. Launch the simulator through
+the helper when running tests; background processes from setup are not relied on.
 
 ## Updating the bundled device definitions
 

@@ -1,0 +1,8 @@
+<iq:manifest version="3" xmlns:iq="http://www.garmin.com/xml/connectiq">
+  <iq:application id="7f2d132315594d38a408c08a476c9224" type="watch-app" name="@Strings.AppName" entry="SmokeApp" launcherIcon="@Drawables.LauncherIcon" minApiLevel="3.0.0">
+    <iq:products><iq:product id="fenix7"/></iq:products>
+    <iq:permissions/>
+    <iq:languages><iq:language>eng</iq:language></iq:languages>
+    <iq:barrels/>
+  </iq:application>
+</iq:manifest>
