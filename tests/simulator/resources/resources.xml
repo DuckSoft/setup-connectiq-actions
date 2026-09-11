@@ -1,0 +1,4 @@
+<resources>
+  <strings><string id="AppName">Simulator smoke test</string></strings>
+  <drawables><bitmap id="LauncherIcon" filename="icon.svg"/></drawables>
+</resources>
